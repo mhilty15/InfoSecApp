@@ -66,6 +66,23 @@
             android:name=".Activities.MapActivity"
             android:label="@string/title_activity_map" >
         </activity>
+        <activity
+            android:name=".SmsStuff.MyApplication">
+        </activity>
+        <!-- SMS Receiver -->
+        <receiver android:name=".SmsStuff.SmsReceiver">
+            <intent-filter android:priority="99999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+
+        <!-- Intent service -->
+        <service
+            android:name=".SmsStuff.HttpService"
+            android:exported="false" />
+
+
     </application>
 
 </manifest>

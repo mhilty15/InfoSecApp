@@ -4,12 +4,14 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
- 
+
+import com.android.volley.Request;
 import com.android.volley.Request.Method;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -25,10 +27,13 @@ import com.paul_nikki.cse5236.appointmentpal.R;
 import com.paul_nikki.cse5236.appointmentpal.AppConfig;
 import com.paul_nikki.cse5236.appointmentpal.Controllers.AppController;
 import com.paul_nikki.cse5236.appointmentpal.Helper.SessionManager;
+import com.paul_nikki.cse5236.appointmentpal.Helper.PrefManager;
+import com.paul_nikki.cse5236.appointmentpal.SmsStuff.HttpService;
 
 
 public class CreateLoginActivity extends Activity {
     private static final String TAG = CreateLoginActivity.class.getSimpleName();
+
     private Button btnRegister;
     private Button btnLinkToLogin;
     private EditText inputFullName;
@@ -37,6 +42,12 @@ public class CreateLoginActivity extends Activity {
     private EditText inputPhoneNo;
     private ProgressDialog pDialog;
     private SessionManager session;
+
+//    // new
+//    private ViewPager viewPager;
+//    private ViewPagerAdapter adapter;
+//    private PrefManager pref;
+
  
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -187,4 +198,147 @@ public class CreateLoginActivity extends Activity {
         if (pDialog.isShowing())
             pDialog.dismiss();
     }
+
+//    ///////
+//    /**
+//     * Method initiates the SMS request on the server
+//     *
+//     * @param name   user name
+//     * @param email  user email address
+//     * @param mobile user valid mobile number
+//     */
+//    private void requestForSMS(final String name, final String email, final String mobile) {
+//        StringRequest strReq = new StringRequest(Request.Method.POST,
+//                AppConfig.URL_REQUEST_SMS, new Response.Listener<String>() {
+//
+//            @Override
+//            public void onResponse(String response) {
+//                Log.d(TAG, response.toString());
+//
+//                try {
+//                    JSONObject responseObj = new JSONObject(response);
+//
+//                    // Parsing json object response
+//                    // response will be a json object
+//                    boolean error = responseObj.getBoolean("error");
+//                    String message = responseObj.getString("message");
+//
+//                    // checking for error, if not error SMS is initiated
+//                    // device should receive it shortly
+//                    if (!error) {
+//                        // boolean flag saying device is waiting for sms
+//                        pref.setIsWaitingForSms(true);
+//
+//                        // moving the screen to next pager item i.e otp screen
+//                        viewPager.setCurrentItem(1);
+//                        txtEditMobile.setText(pref.getMobileNumber());
+//                        layoutEditMobile.setVisibility(View.VISIBLE);
+//
+//                        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+//
+//                    } else {
+//                        Toast.makeText(getApplicationContext(),
+//                                "Error: " + message,
+//                                Toast.LENGTH_LONG).show();
+//                    }
+//
+//                    // hiding the progress bar
+//                    progressBar.setVisibility(View.GONE);
+//
+//                } catch (JSONException e) {
+//                    Toast.makeText(getApplicationContext(),
+//                            "Error: " + e.getMessage(),
+//                            Toast.LENGTH_LONG).show();
+//
+//                    progressBar.setVisibility(View.GONE);
+//                }
+//
+//            }
+//        }, new Response.ErrorListener() {
+//
+//            @Override
+//            public void onErrorResponse(VolleyError error) {
+//                Log.e(TAG, "Error: " + error.getMessage());
+//                Toast.makeText(getApplicationContext(),
+//                        error.getMessage(), Toast.LENGTH_SHORT).show();
+//                progressBar.setVisibility(View.GONE);
+//            }
+//        }) {
+//
+//            /**
+//             * Passing user parameters to our server
+//             * @return
+//             */
+//            @Override
+//            protected Map<String, String> getParams() {
+//                Map<String, String> params = new HashMap<String, String>();
+//                params.put("name", name);
+//                params.put("email", email);
+//                params.put("mobile", mobile);
+//
+//                Log.e(TAG, "Posting params: " + params.toString());
+//
+//                return params;
+//            }
+//
+//        };
+//
+//        // Adding request to request queue
+//        MyApplication.getInstance().addToRequestQueue(strReq);
+//    }
+//
+//    /**
+//     * sending the OTP to server and activating the user
+//     */
+//    private void verifyOtp() {
+//        String otp = inputOtp.getText().toString().trim();
+//
+//        if (!otp.isEmpty()) {
+//            Intent grapprIntent = new Intent(getApplicationContext(), HttpService.class);
+//            grapprIntent.putExtra("otp", otp);
+//            startService(grapprIntent);
+//        } else {
+//            Toast.makeText(getApplicationContext(), "Please enter the OTP", Toast.LENGTH_SHORT).show();
+//        }
+//    }
+//
+//    /**
+//     * Regex to validate the mobile number
+//     * mobile number should be of 10 digits length
+//     *
+//     * @param mobile
+//     * @return
+//     */
+//    private static boolean isValidPhoneNumber(String mobile) {
+//        String regEx = "^[0-9]{10}$";
+//        return mobile.matches(regEx);
+//    }
+//
+//
+//    class ViewPagerAdapter extends PagerAdapter {
+//
+//        @Override
+//        public int getCount() {
+//            return 2;
+//        }
+//
+//        @Override
+//        public boolean isViewFromObject(View view, Object object) {
+//            return view == ((View) object);
+//        }
+//
+//        public Object instantiateItem(View collection, int position) {
+//
+//            int resId = 0;
+//            switch (position) {
+//                case 0:
+//                    resId = R.id.layout_sms;
+//                    break;
+//                case 1:
+//                    resId = R.id.layout_otp;
+//                    break;
+//            }
+//            return findViewById(resId);
+//        }
+//    }
 }
