@@ -8,15 +8,21 @@ import java.util.Vector;
  * Created by nikkbandy on 10/13/15.
  */
 public class User {
-    private String name;
-    private String uuid;
+    private String firstName;
+    private String lastName;
     private String email;
+    private String address;
+    private String phoneNumber;
+    private String password;
     private Vector<Appointment> appts;
 
-    public User(String nm, String uid, String mail){
-        name = nm;
-        uuid = uid;
+    public User(String FN, String LN, String mail, String addr, String phNo, String pwd){
+        //TODO: validation & encryption (?)
+        firstName = FN;
+        lastName = LN;
         email = mail;
+        address = addr;
+        password = pwd;
     }
 
     public Appointment[] getAppointments(){
@@ -24,9 +30,7 @@ public class User {
         Appointment[] apptArray = new Appointment[size];
         return apptArray;
     }
-    public String getName(){
-        return name;
-    }
+
     public void addNewAppointment(Appointment a){
         appts.add(a);
     }

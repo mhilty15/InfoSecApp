@@ -20,38 +20,44 @@ import org.json.JSONObject;
  
 import java.util.HashMap;
 import java.util.Map;
-
-import com.paul_nikki.cse5236.appointmentpal.Models.User;
+ 
 import com.paul_nikki.cse5236.appointmentpal.R;
 import com.paul_nikki.cse5236.appointmentpal.AppConfig;
 import com.paul_nikki.cse5236.appointmentpal.Controllers.AppController;
+import com.paul_nikki.cse5236.appointmentpal.Helper.SQLiteHandler;
 import com.paul_nikki.cse5236.appointmentpal.Helper.SessionManager;
  
 public class LoginActivity extends Activity {
     private static final String TAG = LoginActivity.class.getSimpleName();
     private Button btnLogin;
-
     private Button btnLinkToRegister;
+    private Button btnGetCode;
     private EditText inputEmail;
     private EditText inputPassword;
+    private EditText inputCode;
     private ProgressDialog pDialog;
     private SessionManager session;
+    private SQLiteHandler db;
  
     @Override
     public void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate(bundle) called");
         setContentView(R.layout.activity_login);
  
         inputEmail = (EditText) findViewById(R.id.email);
         inputPassword = (EditText) findViewById(R.id.password);
+        inputCode = (EditText) findViewById(R.id.code);
         btnLogin = (Button) findViewById(R.id.btnLogin);
         btnLinkToRegister = (Button) findViewById(R.id.btnLinkToRegisterScreen);
+        btnGetCode = (Button) findViewById(R.id.btnGetCode);
  
         // Progress dialog
         pDialog = new ProgressDialog(this);
         pDialog.setCancelable(false);
+ 
+        // SQLite database handler
+        db = new SQLiteHandler(getApplicationContext());
  
         // Session manager
         session = new SessionManager(getApplicationContext());
@@ -70,11 +76,12 @@ public class LoginActivity extends Activity {
             public void onClick(View view) {
                 String email = inputEmail.getText().toString().trim();
                 String password = inputPassword.getText().toString().trim();
+                String code = inputCode.getText().toString().trim();
  
                 // Check for empty data in the form
-                if (!email.isEmpty() && !password.isEmpty()) {
+                if (!email.isEmpty() && !password.isEmpty() && !code.isEmpty()) {
                     // login user
-                    checkLogin(email, password);
+                    checkLogin(email, password, code);
                 } else {
                     // Prompt user to enter credentials
                     Toast.makeText(getApplicationContext(),
@@ -91,6 +98,19 @@ public class LoginActivity extends Activity {
             public void onClick(View view) {
                 Intent i = new Intent(getApplicationContext(),
                         CreateLoginActivity.class);
+                startActivity(i);
+                finish();
+            }
+        });
+
+        btnGetCode.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View view) {
+                String email = inputEmail.getText().toString().trim();
+
+                Intent i = new Intent(getApplicationContext(),
+                        MainScreenActivity.class);
+                i.putExtra("email", email);
                 startActivity(i);
                 finish();
             }
@@ -133,7 +153,7 @@ public class LoginActivity extends Activity {
     /**
      * function to verify login details in mysql db
      * */
-    private void checkLogin(final String email, final String password) {
+    private void checkLogin(final String email, final String password, final String code) {
         // Tag used to cancel the request
         String tag_string_req = "req_login";
  
@@ -150,29 +170,34 @@ public class LoginActivity extends Activity {
  
                 try {
                     JSONObject jObj = new JSONObject(response);
-                    String error = jObj.getString("error");
+                    boolean error = jObj.getBoolean("error");
  
                     // Check for error node in json
-                    if (error.equals("0")) {
+                    if (!error) {
                         // user successfully logged in
-                        String uid = jObj.getString("uuid");
-                        String username = jObj.getString("User");
                         // Create login session
-                        User you = new User (username, uid, email);
-
                         session.setLogin(true);
-
+ 
+                        // Now store the user in SQLite
+                        String uid = jObj.getString("uid");
+ 
+                        JSONObject user = jObj.getJSONObject("user");
+                        String name = user.getString("name");
+                        String email = user.getString("email");
+                        String phoneno = user
+                                .getString("phoneno");
+ 
+                        // Inserting row in users table
+                        db.addUser(name, uid, email, phoneno);
+ 
                         // Launch main activity
                         Intent intent = new Intent(LoginActivity.this,
                                 MainScreenActivity.class);
-                        intent.putExtra("name", username);
-                        intent.putExtra("email", email);
-                        intent.putExtra("uuid", uid);
                         startActivity(intent);
                         finish();
                     } else {
                         // Error in login. Get the error message
-                        String errorMsg = "error in login";//jObj.getString("error_msg");
+                        String errorMsg = jObj.getString("error_msg");
                         Toast.makeText(getApplicationContext(),
                                 errorMsg, Toast.LENGTH_LONG).show();
                     }
@@ -200,7 +225,8 @@ public class LoginActivity extends Activity {
                 Map<String, String> params = new HashMap<String, String>();
                 params.put("email", email);
                 params.put("password", password);
- 
+ //               params.put("code", code);
+
                 return params;
             }
  

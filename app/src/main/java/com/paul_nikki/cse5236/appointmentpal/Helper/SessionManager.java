@@ -4,15 +4,14 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.util.Log;
-
-import com.paul_nikki.cse5236.appointmentpal.Models.User;
-
+ 
 public class SessionManager {
     // LogCat tag
     private static String TAG = SessionManager.class.getSimpleName();
-
+ 
     // Shared Preferences
     SharedPreferences pref;
+ 
     Editor editor;
     Context _context;
  
@@ -33,6 +32,7 @@ public class SessionManager {
     public void setLogin(boolean isLoggedIn) {
  
         editor.putBoolean(KEY_IS_LOGGEDIN, isLoggedIn);
+ 
         // commit changes
         editor.commit();
  
@@ -42,5 +42,4 @@ public class SessionManager {
     public boolean isLoggedIn(){
         return pref.getBoolean(KEY_IS_LOGGEDIN, false);
     }
-
 }
