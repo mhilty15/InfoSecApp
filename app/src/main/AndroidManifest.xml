@@ -3,7 +3,8 @@
     package="com.paul_nikki.cse5236.appointmentpal" >
 
     <uses-permission android:name="android.permission.INTERNET" />
-
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
     <application
         android:name="com.paul_nikki.cse5236.appointmentpal.Controllers.AppController"
         android:allowBackup="true"
@@ -67,6 +68,18 @@
             android:name=".Activities.MapActivity"
             android:label="@string/title_activity_map" >
         </activity>
+        <!-- SMS Receiver -->
+        <receiver android:name=".receiver.SmsReceiver">
+            <intent-filter android:priority="99999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+
+        <!-- Intent service -->
+        <service
+            android:name=".service.HttpService"
+            android:exported="false" />
     </application>
 
 </manifest>

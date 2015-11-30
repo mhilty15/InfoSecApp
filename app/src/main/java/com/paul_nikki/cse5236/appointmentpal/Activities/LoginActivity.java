@@ -4,12 +4,18 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
- 
+
+import com.android.volley.Request;
 import com.android.volley.Request.Method;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -20,13 +26,16 @@ import org.json.JSONObject;
  
 import java.util.HashMap;
 import java.util.Map;
- 
+
+import com.paul_nikki.cse5236.appointmentpal.Helper.PrefManager;
 import com.paul_nikki.cse5236.appointmentpal.R;
-import com.paul_nikki.cse5236.appointmentpal.AppConfig;
+import com.paul_nikki.cse5236.appointmentpal.app.AppConfig;
 import com.paul_nikki.cse5236.appointmentpal.Controllers.AppController;
 import com.paul_nikki.cse5236.appointmentpal.Helper.SQLiteHandler;
 import com.paul_nikki.cse5236.appointmentpal.Helper.SessionManager;
- 
+import com.paul_nikki.cse5236.appointmentpal.app.MyApplication;
+import com.paul_nikki.cse5236.appointmentpal.service.HttpService;
+
 public class LoginActivity extends Activity {
     private static final String TAG = LoginActivity.class.getSimpleName();
     private Button btnLogin;
@@ -38,6 +47,17 @@ public class LoginActivity extends Activity {
     private ProgressDialog pDialog;
     private SessionManager session;
     private SQLiteHandler db;
+
+    // new
+    private ViewPager viewPager;
+    //private ViewPagerAdapter adapter;
+    private Button btnRequestSms, btnVerifyOtp;
+    private EditText inputName, inputMobile, inputOtp;
+    private ProgressBar progressBar;
+    private PrefManager pref;
+    private ImageButton btnEditMobile;
+    private TextView txtEditMobile;
+    private LinearLayout layoutEditMobile;
  
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -51,6 +71,11 @@ public class LoginActivity extends Activity {
         btnLogin = (Button) findViewById(R.id.btnLogin);
         btnLinkToRegister = (Button) findViewById(R.id.btnLinkToRegisterScreen);
         btnGetCode = (Button) findViewById(R.id.btnGetCode);
+
+        //new
+        // this method does not make sure their phone is valid
+        // only gets code, makes sure it's correct
+        // add the phone valid in the createLoginActivity
  
         // Progress dialog
         pDialog = new ProgressDialog(this);
@@ -82,6 +107,7 @@ public class LoginActivity extends Activity {
                 if (!email.isEmpty() && !password.isEmpty() && !code.isEmpty()) {
                     // login user
                     checkLogin(email, password, code);
+                    verifyOtp();
                 } else {
                     // Prompt user to enter credentials
                     Toast.makeText(getApplicationContext(),
@@ -104,8 +130,20 @@ public class LoginActivity extends Activity {
         });
 
         btnGetCode.setOnClickListener(new View.OnClickListener() {
+            String email = inputEmail.getText().toString().trim();
+            String password = inputPassword.getText().toString().trim();
+            String code = inputCode.getText().toString().trim();
 
             public void onClick(View view) {
+
+                //new
+
+                // requesting an SMS code requires name, email, mobile
+                // only shoes email, password, and code.
+                // Either change database to not need these (and this code definition)
+                // or add in these fields so this just works.
+                //requestForSMS(name, email, mobile);
+
                 String email = inputEmail.getText().toString().trim();
 
                 Intent i = new Intent(getApplicationContext(),
@@ -245,4 +283,110 @@ public class LoginActivity extends Activity {
         if (pDialog.isShowing())
             pDialog.dismiss();
     }
+
+    // ---------------------------------------new---------------------------------------------
+    /**
+     * Method initiates the SMS request on the server
+     *
+     * @param name   user name
+     * @param email  user email address
+     * @param mobile user valid mobile number
+     */
+    private void requestForSMS(final String name, final String email, final String mobile) {
+        StringRequest strReq = new StringRequest(Request.Method.POST,
+                AppConfig.URL_REQUEST_SMS, new Response.Listener<String>() {
+
+            @Override
+            public void onResponse(String response) {
+                Log.d(TAG, response.toString());
+
+                try {
+                    JSONObject responseObj = new JSONObject(response);
+
+                    // Parsing json object response
+                    // response will be a json object
+                    boolean error = responseObj.getBoolean("error");
+                    String message = responseObj.getString("message");
+
+                    // checking for error, if not error SMS is initiated
+                    // device should receive it shortly
+                    if (!error) {
+                        // boolean flag saying device is waiting for sms
+                        pref.setIsWaitingForSms(true);
+
+                        // moving the screen to next pager item i.e otp screen
+                        viewPager.setCurrentItem(1);
+                        txtEditMobile.setText(pref.getMobileNumber());
+                        layoutEditMobile.setVisibility(View.VISIBLE);
+
+                        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+
+                    } else {
+                        Toast.makeText(getApplicationContext(),
+                                "Error: " + message,
+                                Toast.LENGTH_LONG).show();
+                    }
+
+                    // hiding the progress bar
+                    progressBar.setVisibility(View.GONE);
+
+                } catch (JSONException e) {
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+
+                    progressBar.setVisibility(View.GONE);
+                }
+
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(TAG, "Error: " + error.getMessage());
+                Toast.makeText(getApplicationContext(),
+                        error.getMessage(), Toast.LENGTH_SHORT).show();
+                progressBar.setVisibility(View.GONE);
+            }
+        }) {
+
+            /**
+             * Passing user parameters to our server
+             * @return
+             */
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("name", name);
+                params.put("email", email);
+                params.put("mobile", mobile);
+
+                Log.e(TAG, "Posting params: " + params.toString());
+
+                return params;
+            }
+
+        };
+
+        // Adding request to request queue
+        MyApplication.getInstance().addToRequestQueue(strReq);
+    }
+
+    /**
+     * sending the OTP to server and activating the user
+     */
+    private void verifyOtp() {
+        String otp = inputOtp.getText().toString().trim();
+
+        if (!otp.isEmpty()) {
+            Intent grapprIntent = new Intent(getApplicationContext(), HttpService.class);
+            grapprIntent.putExtra("otp", otp);
+            startService(grapprIntent);
+        } else {
+            Toast.makeText(getApplicationContext(), "Please enter the OTP", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
 }

@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
  
 import com.paul_nikki.cse5236.appointmentpal.R;
-import com.paul_nikki.cse5236.appointmentpal.AppConfig;
+import com.paul_nikki.cse5236.appointmentpal.app.AppConfig;
 import com.paul_nikki.cse5236.appointmentpal.Controllers.AppController;
 import com.paul_nikki.cse5236.appointmentpal.Helper.SQLiteHandler;
 import com.paul_nikki.cse5236.appointmentpal.Helper.SessionManager;
@@ -84,6 +84,7 @@ public class CreateLoginActivity extends Activity {
  
                 if (!name.isEmpty() && !email.isEmpty() && !password.isEmpty()) {
                     registerUser(name, email, phoneno, password);
+
                 } else {
                     Toast.makeText(getApplicationContext(),
                             "Please enter your details!", Toast.LENGTH_LONG)
